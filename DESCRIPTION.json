@@ -1,0 +1,41 @@
+{
+	"name": "MedGen",
+	"title": "Data extracted from the MedGen database",
+	"description": "Organizes information related to human medical genetics, such as attributes of conditions with a genetic contribution.",
+	"reference URL": "https://www.ncbi.nlm.nih.gov/medgen/",
+	"version": "0.1",
+	"source files": [
+		{
+			"name":"MGCONSO.RFF.gz",
+			"URL template":"ftp://ftp.ncbi.nlm.nih.gov/pub/medgen/MGCONSO.RRF.gz",
+			"remote update frequency": {
+				"value": ,
+				"units": "1/day"
+			}
+		},
+	    	{
+			"name":"NAMES.RGG.gz",
+			"URL template":"ftp://ftp.ncbi.nlm.nih.gov/pub/medgen/NAMES.RRF.gz",
+			"remote update frequency": {
+				"value": ,
+				"units": "1/day"
+			}
+		},
+	    	{
+			"name":"MGDEF.RFF.gz",
+			"URL template":"ftp://ftp.ncbi.nlm.nih.gov/pub/medgen/MGDEF.RRF.gz",
+			"remote update frequency": {
+				"value": ,
+				"units": "1/day"
+			}
+		},
+	    	{
+			"name":"MGREL.RFF.gz",
+			"URL template":"ftp://ftp.ncbi.nlm.nih.gov/pub/medgen/MGREL.RRF.gz",
+			"remote update frequency": {
+				"value": ,
+				"units": "1/day"
+			}
+		}
+	]
+}
