@@ -9,7 +9,7 @@
 			"name":"MGCONSO.RFF.gz",
 			"URL template":"ftp://ftp.ncbi.nlm.nih.gov/pub/medgen/MGCONSO.RRF.gz",
 			"remote update frequency": {
-				"value": ,
+				"value": 0,
 				"units": "1/day"
 			}
 		},
@@ -17,7 +17,7 @@
 			"name":"NAMES.RGG.gz",
 			"URL template":"ftp://ftp.ncbi.nlm.nih.gov/pub/medgen/NAMES.RRF.gz",
 			"remote update frequency": {
-				"value": ,
+				"value": 0,
 				"units": "1/day"
 			}
 		},
@@ -25,7 +25,7 @@
 			"name":"MGDEF.RFF.gz",
 			"URL template":"ftp://ftp.ncbi.nlm.nih.gov/pub/medgen/MGDEF.RRF.gz",
 			"remote update frequency": {
-				"value": ,
+				"value": 0,
 				"units": "1/day"
 			}
 		},
@@ -33,7 +33,7 @@
 			"name":"MGREL.RFF.gz",
 			"URL template":"ftp://ftp.ncbi.nlm.nih.gov/pub/medgen/MGREL.RRF.gz",
 			"remote update frequency": {
-				"value": ,
+				"value": 0,
 				"units": "1/day"
 			}
 		}
