@@ -1,3 +1,6 @@
+rm(list = ls())
+gc()
+
 setwd("~/Shared/Data-Science/Data-Source-Model-Repository/MedGen/scripts/")
 
 library(XML)
@@ -44,23 +47,35 @@ MedGen_conso$DB <- "MedGen"
 MedGen_crossId <- MedGen_conso[,c("DB","X.CUI","SAB","SDUI")]
 names(MedGen_crossId) <- c("DB1","id1","DB2","id2")
 
-## entryId
-MedGen_entryId <- MedGen_conso[!duplicated(MedGen_conso$X.CUI), c("DB","X.CUI")]
-names(MedGen_entryId) <- c("DB","id")
-
-MedGen_def <- read.table(file.path(sdir,"MGDEF.RFF"), sep = "|", header = TRUE, comment.char = "", quote = "", 
-                           fill = TRUE, colClasses = c("character"))
-MedGen_entryId$definition <- MedGen_def$DEF[match(MedGen_entryId$id, MedGen_def$X.CUI)]
-
 ## idNames
 MedGen_idNames <- read.table(file.path(sdir,"NAMES.RGG"), sep = "|", header = TRUE, comment.char = "", quote = "", 
-                         fill = TRUE, colClasses = c("character"))
+                             fill = TRUE, colClasses = c("character"))
 MedGen_idNames$DB <- "MedGen"
 MedGen_idNames <- MedGen_idNames[,c("DB","X.CUI","name")]
 names(MedGen_idNames) <- c("DB","id","name")
 MedGen_idNames$canonical <- TRUE
+MedGen_idNames$name <- tolower(MedGen_idNames$name)
+MedGen_idNames$name <- gsub("[[:punct:]]"," ",MedGen_idNames$name)
+MedGen_idNames$name <- iconv(x = MedGen_idNames$name,to="ASCII//TRANSLIT")
+MedGen_idNames$name <- gsub("\n"," ",MedGen_idNames$name)
+MedGen_idNames <- unique(MedGen_idNames)
+
+## entryId
+MedGen_entryId <- unique(data.frame(DB = c(MedGen_conso$DB,MedGen_idNames$DB),
+                             id = c(MedGen_conso$X.CUI,MedGen_idNames$id),
+                             stringsAsFactors = F))
+MedGen_def <- read.table(file.path(sdir,"MGDEF.RFF"), sep = "|", header = TRUE, comment.char = "", quote = "", 
+                           fill = TRUE, colClasses = c("character"))
+MedGen_entryId$definition <- MedGen_def$DEF[match(MedGen_entryId$id, MedGen_def$X.CUI)]
+MedGen_entryId$definition <- ifelse(MedGen_entryId$definition == "NA",NA,MedGen_entryId$definition)
+MedGen_entryId$definition <- tolower(MedGen_entryId$definition)
+MedGen_entryId$definition <- gsub("[[:punct:]]"," ",MedGen_entryId$definition)
+MedGen_entryId$definition <- iconv(x = MedGen_entryId$definition,to="ASCII//TRANSLIT")
+MedGen_entryId$definition <- gsub("\n"," ",MedGen_entryId$definition)
+
 
 rm(MedGen_conso, MedGen_def)
+
 
 ###############################################################################@
 ## Writing tables ----
@@ -79,7 +94,7 @@ for(f in toSave){
   write.table(
     get(f),
     file=file.path(ddir, paste(f, ".txt", sep="")),
-    sep="\t",
+    sep="|",
     row.names=FALSE, col.names=TRUE,
     quote=FALSE
   )
