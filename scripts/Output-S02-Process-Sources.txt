@@ -1,0 +1,426 @@
+> source('~/Shared/Data-Science/Data-Source-Model-Repository/MedGen/scripts/S02-Process-Sources.R', echo=TRUE)
+
+> rm(list = ls())
+
+> gc()
+          used (Mb) gc trigger  (Mb)  max used   (Mb)
+Ncells 1447164 77.3    4615695 246.6   9348990  499.3
+Vcells 6791087 51.9   39206208 299.2 210901513 1609.1
+
+> setwd("~/Shared/Data-Science/Data-Source-Model-Repository/MedGen/scripts/")
+
+> library(XML)
+
+> library(parallel)
+
+> ##
+> mc.cores <- 55
+
+> sdir <- "../sources"
+
+> ddir <- "../data"
+
+> ###############################################################################@
+> ## Source information ----
+> #################################### .... [TRUNCATED] 
+
+> MedGen_sourceFiles <- sfi[which(sfi$inUse), c("url", "current")]
+
+> ###############################################################################@
+> ## Data from medgen ----
+> ###################################### .... [TRUNCATED] 
+gzip: ../sources/MGCONSO.RFF already exists;	not overwritten
+gzip: ../sources/NAMES.RGG already exists;	not overwritten
+gzip: ../sources/MGDEF.RFF already exists;	not overwritten
+gzip: ../sources/MGREL.RFF already exists;	not overwritten
+gzip: ../sources/MGSTY.RFF.gz: No such file or directory
+
+> ###########################
+> ## Basic information
+> 
+> ## crossId
+> MedGen_conso <- read.table(file.path(sdir,"MGCONSO.RFF"), sep = "|", header = T .... [TRUNCATED] 
+
+> MedGen_conso$SAB[MedGen_conso$SAB == "MSH"] <- "MeSH"
+
+> MedGen_conso$SAB[MedGen_conso$SAB == "NCI"] <- "NCIt"
+
+> MedGen_conso$SAB[MedGen_conso$SAB == "SNOMEDCT_US"] <- "SNOMEDCT"
+
+> MedGen_conso$SAB[MedGen_conso$SAB == "ORDO"] <- "ORPHA"
+
+> MedGen_conso$DB <- "MedGen"
+
+> MedGen_conso$SDUI <- gsub(".*:","",MedGen_conso$SDUI)
+
+> MedGen_conso$SDUI <- gsub(".*_","",MedGen_conso$SDUI)
+
+> MedGen_conso$id <- ifelse(MedGen_conso$SAB %in% c("NCIt","SNOMEDCT"),MedGen_conso$SCUI,MedGen_conso$SDUI)
+
+> MedGen_conso <- MedGen_conso[-which(MedGen_conso$SAB == ""),]
+
+> MedGen_crossId <- unique(MedGen_conso[,c("DB","X.CUI","SAB","id")])
+
+> names(MedGen_crossId) <- c("DB1","id1","DB2","id2")
+
+> table(MedGen_crossId$DB1)
+
+MedGen 
+391556 
+
+> table(MedGen_crossId$DB2)
+
+     GTR      HPO     MeSH     NCIt     OMIM    ORPHA SNOMEDCT 
+   24494    11051   108078    54286    67632     8793   117222 
+
+> dim(MedGen_crossId)
+[1] 391556      4
+
+> ## When removing prefix, an integer is a correct disease ID
+> table(!is.na(as.numeric(sub("^[^[:digit:]]*", "", MedGen_crossId$id2))))
+
+  TRUE 
+391556 
+
+> table(!is.na(as.numeric(sub("^[^[:digit:]]*", "", MedGen_crossId$id1))))
+
+  TRUE 
+391556 
+
+> toKeep <- MedGen_crossId[which(!is.na(as.numeric(sub("^[^[:digit:]]*", "", MedGen_crossId$id2))) &
++                                 !is.na(as.numer .... [TRUNCATED] 
+
+> dim(toKeep)
+[1] 391556      4
+
+> toCheck <- MedGen_crossId[-which(!is.na(as.numeric(sub("^[^[:digit:]]*", "", MedGen_crossId$id2))) &
++                             !is.na(as.numeric .... [TRUNCATED] 
+
+> dim(toCheck)
+[1] 0 4
+
+> ## Remove any DBs that are not disease DBs and DB1 can only be "EFO" or "Orphanet"
+> ## check wrong IDs, remove weird ones still
+> table(toKeep$DB2)
+
+     GTR      HPO     MeSH     NCIt     OMIM    ORPHA SNOMEDCT 
+   24494    11051   108078    54286    67632     8793   117222 
+
+> table(toKeep$DB1)
+
+MedGen 
+391556 
+
+> ## Remove self references
+> MedGen_crossId[which(MedGen_crossId$id1 == MedGen_crossId$id2),]
+[1] DB1 id1 DB2 id2
+<0 rows> (or 0-length row.names)
+
+> ## MedGen_crossId <- MedGen_crossId[-which(MedGen_crossId$id1 == MedGen_crossId$id2),]
+> 
+> ## Keep only disease
+> MedGen_dis <- read.table(file.pat .... [TRUNCATED] 
+
+> MedGen_dis <- MedGen_dis[grep(paste("Disease or Syndrome","Acquired Abnormality",
++                                     "Anatomical Abnormality","Co ..." ... [TRUNCATED] 
+
+> MedGen_crossId <- MedGen_crossId[which(MedGen_crossId$id1 %in% MedGen_dis$X.CUI),]
+
+> dim(MedGen_crossId)
+[1] 105546      4
+
+> ## idNames
+> MedGen_idNames <- read.table(file.path(sdir,"NAMES.RGG"), sep = "|", header = TRUE, comment.char = "", quote = "", 
++                   .... [TRUNCATED] 
+
+> MedGen_idNames$DB <- "MedGen"
+
+> MedGen_idNames <- MedGen_idNames[,c("DB","X.CUI","name")]
+
+> names(MedGen_idNames) <- c("DB","id","syn")
+
+> ## * Finding non-numeric ID 
+> id <-  (MedGen_idNames$id)
+
+> numidsuf <- as.numeric(sub("^[^[:digit:]]*", "", id))
+
+> MedGen_idNames[which(is.na(numidsuf)),]
+           DB  id syn
+298593 MedGen GTR   N
+
+> MedGen_idNames <- MedGen_idNames[-which(is.na(numidsuf)),] 
+
+> MedGen_idNames$canonical <- ifelse(MedGen_idNames$syn %in% MedGen_conso$STR,TRUE, FALSE)
+
+> ## Check characters for \t, \n, \r and put to ASCII
+> MedGen_idNames$syn <- iconv(x = MedGen_idNames$syn,to="ASCII//TRANSLIT")
+
+> table(unlist(sapply(MedGen_idNames$syn, strsplit, split = "")))
+
+            _      -      ,      ;      :      ?      .      '      "      (      )      [      ]      {      }      @      * 
+833965    730 226790  71097    547   3086      4   8103   8428     47  70534  70534    100    101      3      3      9   1234 
+     /      &      #      %      `      ^      +      <      =      >      ~      0      1      2      3      4      5      6 
+  6104    216     12   1042      1    174   2523    184    168    289      8  39517  71410  60428  44099  42090  29397  25595 
+     7      8      9      a      A      b      B      c      C      d      D      e      E      f      F      g      G      h 
+ 18884  15145  13751 660184  60930 109975  22523 305097  64559 279782  32710 813430  33309 130510  20754 120678  22133 233684 
+     H      i      I      j      J      k      K      l      L      m      M      n      N      o      O      p      P      q 
+ 27508 692355  40469   5804   2718  22851   5755 459530  25122 264589  36643 576059  42309 664161  26207 235718  38966   8083 
+     Q      r      R      s      S      t      T      u      U      v      V      w      W      x      X      y      Y      z 
+  1308 518597  27349 387180  44918 547117  36935 211477   9357  64855   9657  27910   4169  52000   3644 263116   5475  27668 
+     Z 
+  2002 
+
+> MedGen_idNames$syn <- gsub(paste("\n","\t","\r", sep = "|")," ",MedGen_idNames$syn)
+
+> table(unlist(sapply(MedGen_idNames$syn, strsplit, split = "")))
+
+            _      -      ,      ;      :      ?      .      '      "      (      )      [      ]      {      }      @      * 
+833965    730 226790  71097    547   3086      4   8103   8428     47  70534  70534    100    101      3      3      9   1234 
+     /      &      #      %      `      ^      +      <      =      >      ~      0      1      2      3      4      5      6 
+  6104    216     12   1042      1    174   2523    184    168    289      8  39517  71410  60428  44099  42090  29397  25595 
+     7      8      9      a      A      b      B      c      C      d      D      e      E      f      F      g      G      h 
+ 18884  15145  13751 660184  60930 109975  22523 305097  64559 279782  32710 813430  33309 130510  20754 120678  22133 233684 
+     H      i      I      j      J      k      K      l      L      m      M      n      N      o      O      p      P      q 
+ 27508 692355  40469   5804   2718  22851   5755 459530  25122 264589  36643 576059  42309 664161  26207 235718  38966   8083 
+     Q      r      R      s      S      t      T      u      U      v      V      w      W      x      X      y      Y      z 
+  1308 518597  27349 387180  44918 547117  36935 211477   9357  64855   9657  27910   4169  52000   3644 263116   5475  27668 
+     Z 
+  2002 
+
+> MedGen_idNames$syn <- gsub("\"","'",MedGen_idNames$syn)
+
+> table(unlist(sapply(MedGen_idNames$syn, strsplit, split = "")))
+
+            _      -      ,      ;      :      ?      .      '      (      )      [      ]      {      }      @      *      / 
+833965    730 226790  71097    547   3086      4   8103   8475  70534  70534    100    101      3      3      9   1234   6104 
+     &      #      %      `      ^      +      <      =      >      ~      0      1      2      3      4      5      6      7 
+   216     12   1042      1    174   2523    184    168    289      8  39517  71410  60428  44099  42090  29397  25595  18884 
+     8      9      a      A      b      B      c      C      d      D      e      E      f      F      g      G      h      H 
+ 15145  13751 660184  60930 109975  22523 305097  64559 279782  32710 813430  33309 130510  20754 120678  22133 233684  27508 
+     i      I      j      J      k      K      l      L      m      M      n      N      o      O      p      P      q      Q 
+692355  40469   5804   2718  22851   5755 459530  25122 264589  36643 576059  42309 664161  26207 235718  38966   8083   1308 
+     r      R      s      S      t      T      u      U      v      V      w      W      x      X      y      Y      z      Z 
+518597  27349 387180  44918 547117  36935 211477   9357  64855   9657  27910   4169  52000   3644 263116   5475  27668   2002 
+
+> ## Remove NA
+> table(is.na(MedGen_idNames$syn))
+
+ FALSE 
+302010 
+
+> MedGen_idNames <- MedGen_idNames[!is.na(MedGen_idNames$syn),]
+
+> ## Remove duplicated (keep canonical)
+> dim(MedGen_idNames)
+[1] 302010      4
+
+> dim(unique(MedGen_idNames))
+[1] 302010      4
+
+> MedGen_idNames <- MedGen_idNames[order(MedGen_idNames$canonical,decreasing = T),]
+
+> MedGen_idNames <- unique(MedGen_idNames)
+
+> dim(MedGen_idNames)
+[1] 302010      4
+
+> ## all idNames in entryId
+> table(MedGen_idNames$id %in% MedGen_dis$X.CUI)
+
+ FALSE   TRUE 
+242089  59921 
+
+> MedGen_idNames <- MedGen_idNames[which(MedGen_idNames$id %in% MedGen_dis$X.CUI),]
+
+> ## Remove empty names, ifany
+> nc <- nchar(MedGen_idNames$syn)
+
+> head(table(nc))
+nc
+  3   4   5   6   7   8 
+  4  16  30  63  65 115 
+
+> MedGen_idNames[which(nc < 3),]
+[1] DB        id        syn       canonical
+<0 rows> (or 0-length row.names)
+
+> ## Remove names of 0 or 1 character long
+> MedGen_idNames[which(nc == 0),]
+[1] DB        id        syn       canonical
+<0 rows> (or 0-length row.names)
+
+> MedGen_idNames[which(nc == 1),]
+[1] DB        id        syn       canonical
+<0 rows> (or 0-length row.names)
+
+> MedGen_idNames <- MedGen_idNames[-which(nc == 1),]
+
+> ## entryId
+> MedGen_entryId <- unique(data.frame(DB = c(MedGen_crossId$DB1,MedGen_idNames$DB),
++                              id = c(MedGen_crossId$ .... [TRUNCATED] 
+
+> MedGen_def <- read.table(file.path(sdir,"MGDEF.RFF"), sep = "|", header = TRUE, comment.char = "", quote = "", 
++                            fill =  .... [TRUNCATED] 
+
+> MedGen_entryId$def <- MedGen_def$DEF[match(MedGen_entryId$id, MedGen_def$X.CUI)]
+
+> ## Check characters for \t, \n, \r and put to ASCII
+> MedGen_entryId$def <- iconv(x = MedGen_entryId$def,to="ASCII//TRANSLIT")
+
+> table(unlist(sapply(MedGen_entryId$def, strsplit, split = "")))
+
+    \t             _      -      ,      ;      :      !      ?      .      '      "      (      )      [      ]      *      / 
+    21 814657      5  13690  56166   4484   1090      1     63  48727   1123    640  18362  18378    132    132      3   1876 
+    \\      &      #      %      `      ^      +      <      =      >      ~      $      0      1      2      3      4      5 
+     3     10      5   1519      8      1     68     67     14     65     53      2   7182   7932   6801   2902   2095   2624 
+     6      7      8      9      a      A      b      B      c      C      d      D      e      E      f      F      g      G 
+  2037   1386   1388   2232 417630  19426  66918   4179 190268  10977 189933   8436 534678   8234 106969   3575  75329   3345 
+     h      H      i      I      j      J      k      K      l      L      m      M      n      N      o      O      p      P 
+170839   6140 391713  14526   2934    695  15788   1372 233844   6148 140261   7940 334301   6533 342231   6373 114637   7796 
+     q      Q      r      R      s      S      t      T      u      U      v      V      w      W      x      X      y      Y 
+  2828    303 305347   7018 322750  12036 357465  14112 120075   2520  51543   2267  36617   1285  12020   1493 113815   1566 
+     z      Z 
+  9582    295 
+
+> MedGen_entryId$def <- gsub(paste("\n","\t","\r", sep = "|")," ",MedGen_entryId$def)
+
+> table(unlist(sapply(MedGen_entryId$def, strsplit, split = "")))
+
+            _      -      ,      ;      :      !      ?      .      '      "      (      )      [      ]      *      /     \\ 
+814678      5  13690  56166   4484   1090      1     63  48727   1123    640  18362  18378    132    132      3   1876      3 
+     &      #      %      `      ^      +      <      =      >      ~      $      0      1      2      3      4      5      6 
+    10      5   1519      8      1     68     67     14     65     53      2   7182   7932   6801   2902   2095   2624   2037 
+     7      8      9      a      A      b      B      c      C      d      D      e      E      f      F      g      G      h 
+  1386   1388   2232 417630  19426  66918   4179 190268  10977 189933   8436 534678   8234 106969   3575  75329   3345 170839 
+     H      i      I      j      J      k      K      l      L      m      M      n      N      o      O      p      P      q 
+  6140 391713  14526   2934    695  15788   1372 233844   6148 140261   7940 334301   6533 342231   6373 114637   7796   2828 
+     Q      r      R      s      S      t      T      u      U      v      V      w      W      x      X      y      Y      z 
+   303 305347   7018 322750  12036 357465  14112 120075   2520  51543   2267  36617   1285  12020   1493 113815   1566   9582 
+     Z 
+   295 
+
+> MedGen_entryId$def <- gsub("\"","'",MedGen_entryId$def)
+
+> table(unlist(sapply(MedGen_entryId$def, strsplit, split = "")))
+
+            _      -      ,      ;      :      !      ?      .      '      (      )      [      ]      *      /     \\      & 
+814678      5  13690  56166   4484   1090      1     63  48727   1763  18362  18378    132    132      3   1876      3     10 
+     #      %      `      ^      +      <      =      >      ~      $      0      1      2      3      4      5      6      7 
+     5   1519      8      1     68     67     14     65     53      2   7182   7932   6801   2902   2095   2624   2037   1386 
+     8      9      a      A      b      B      c      C      d      D      e      E      f      F      g      G      h      H 
+  1388   2232 417630  19426  66918   4179 190268  10977 189933   8436 534678   8234 106969   3575  75329   3345 170839   6140 
+     i      I      j      J      k      K      l      L      m      M      n      N      o      O      p      P      q      Q 
+391713  14526   2934    695  15788   1372 233844   6148 140261   7940 334301   6533 342231   6373 114637   7796   2828    303 
+     r      R      s      S      t      T      u      U      v      V      w      W      x      X      y      Y      z      Z 
+305347   7018 322750  12036 357465  14112 120075   2520  51543   2267  36617   1285  12020   1493 113815   1566   9582    295 
+
+> ## check NA
+> table(is.na(MedGen_entryId$def))
+
+FALSE  TRUE 
+16257 43664 
+
+> ## Remove duplicated (keep canonical)
+> dim(MedGen_entryId)
+[1] 59921     3
+
+> dim(unique(MedGen_entryId))
+[1] 59921     3
+
+> ## all idNames in entryId
+> table(MedGen_entryId$id %in% MedGen_dis$X.CUI)
+
+ TRUE 
+59921 
+
+> # MedGen_entryId <- MedGen_entryId[which(MedGen_entryId$id %in% MedGen_dis$X.CUI),]
+> ## Remove empty names, ifany
+> nc <- nchar(MedGen_entryId$def)
+
+> head(table(nc))
+nc
+ 1  2  3  4  5  6 
+19  2 12 53 50 36 
+
+> MedGen_entryId[which(nc < 3),]
+           DB       id def
+15384  MedGen C0220663   B
+29653  MedGen C0338503   M
+45410  MedGen C0599973   M
+48598  MedGen C0796085   M
+58094  MedGen C1832661   M
+68910  MedGen C1861689   M
+69918  MedGen C1864689   M
+69923  MedGen C1864690   M
+69938  MedGen C1864720   M
+69942  MedGen C1864721   M
+72060  MedGen C1968843   M
+72483  MedGen C1970237   M
+74629  MedGen C2677434   M
+76102  MedGen C2751307   M
+84915  MedGen C3808012   M
+85336  MedGen C3809803   M
+101521 MedGen CN120488   M
+102894 MedGen CN204440  ).
+103273 MedGen CN206363   .
+103324 MedGen CN206542  ).
+103838 MedGen CN226833   M
+
+> ## Remove names of 0 or 1 character long
+> MedGen_entryId[which(nc == 0),]
+[1] DB  id  def
+<0 rows> (or 0-length row.names)
+
+> MedGen_entryId[which(nc == 1),]
+           DB       id def
+15384  MedGen C0220663   B
+29653  MedGen C0338503   M
+45410  MedGen C0599973   M
+48598  MedGen C0796085   M
+58094  MedGen C1832661   M
+68910  MedGen C1861689   M
+69918  MedGen C1864689   M
+69923  MedGen C1864690   M
+69938  MedGen C1864720   M
+69942  MedGen C1864721   M
+72060  MedGen C1968843   M
+72483  MedGen C1970237   M
+74629  MedGen C2677434   M
+76102  MedGen C2751307   M
+84915  MedGen C3808012   M
+85336  MedGen C3809803   M
+101521 MedGen CN120488   M
+103273 MedGen CN206363   .
+103838 MedGen CN226833   M
+
+> MedGen_entryId$def[which(nc < 3)] <- NA
+
+> rm(MedGen_conso, MedGen_def, MedGen_dis)
+
+> ###############################################################################@
+> ## Writing tables ----
+> ######################################## .... [TRUNCATED] 
+Writing tables...
+
+> message(Sys.time())
+2018-06-07 09:36:40
+
+> toSave <- grep("^MedGen[_]", ls(), value=T)
+
+> for(f in toSave){
++   message(paste("Saving", f))
++   ## Ensure unicity
++   assign(f, get(f))
++   if(length(names(f))==0){
++     f <- unique(f)
++    .... [TRUNCATED] 
+Saving MedGen_crossId
+Saving MedGen_entryId
+Saving MedGen_idNames
+Saving MedGen_sourceFiles
+
+> message(Sys.time())
+2018-06-07 09:36:41
+
+> message("... Done\n")
+... Done

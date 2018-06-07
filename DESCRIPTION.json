@@ -36,6 +36,14 @@
 				"value": 0,
 				"units": "1/day"
 			}
+		},
+	        {
+			"name":"MGSTY.RFF.gz",
+		        "URL template":"ftp://ftp.ncbi.nlm.nih.gov/pub/medgen/MGSTY.RRF.gz",
+			"remote update frequency": {
+				"value": 0,
+				"units": "1/day"
+			}
 		}
 	]
 }
