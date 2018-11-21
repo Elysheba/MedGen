@@ -5,11 +5,13 @@ setwd("~/Shared/Data-Science/Data-Source-Model-Repository/MedGen/scripts/")
 
 library(XML)
 library(parallel)
+library(here)
+source("../../00-Utils/writeLastUpdate.R")
 
 ##
 mc.cores <- 55
-sdir <- "../sources"
-ddir <- "../data"
+sdir <- file.path("../sources")
+ddir <- file.path("../data")
 
 ###############################################################################@
 ## Source information ----
@@ -29,7 +31,8 @@ MedGen_sourceFiles <- sfi[which(sfi$inUse), c("url", "current")]
 ## decompress gz
 for(f in sfi$file){
   gzf <- file.path(sdir,f)
-  system(paste0("gzip -d ", file.path(sdir,f)))
+  system(paste0("gzip -d ", gzf))
+  # system(paste0("rm ",file.path(sdir,gsub(".gz","",f))))
   }
 
 ###########################
@@ -42,7 +45,7 @@ MedGen_conso$SAB[MedGen_conso$SAB == "MSH"] <- "MeSH"
 MedGen_conso$SAB[MedGen_conso$SAB == "NCI"] <- "NCIt"
 MedGen_conso$SAB[MedGen_conso$SAB == "SNOMEDCT_US"] <- "SNOMEDCT"
 MedGen_conso$SAB[MedGen_conso$SAB == "ORDO"] <- "ORPHA"
-MedGen_conso$DB <- "MedGen"
+MedGen_conso$DB <- "UMLS"
 MedGen_conso$SDUI <- gsub(".*:","",MedGen_conso$SDUI)
 MedGen_conso$SDUI <- gsub(".*_","",MedGen_conso$SDUI)
 MedGen_conso$id <- ifelse(MedGen_conso$SAB %in% c("NCIt","SNOMEDCT"),MedGen_conso$SCUI,MedGen_conso$SDUI)
@@ -97,9 +100,7 @@ MedGen_idNames$canonical <- ifelse(MedGen_idNames$syn %in% MedGen_conso$STR,TRUE
 
 ## Check characters for \t, \n, \r and put to ASCII
 MedGen_idNames$syn <- iconv(x = MedGen_idNames$syn,to="ASCII//TRANSLIT")
-table(unlist(sapply(MedGen_idNames$syn, strsplit, split = "")))
 MedGen_idNames$syn <- gsub(paste("\n","\t","\r", sep = "|")," ",MedGen_idNames$syn)
-table(unlist(sapply(MedGen_idNames$syn, strsplit, split = "")))
 MedGen_idNames$syn <- gsub("\"","'",MedGen_idNames$syn)
 table(unlist(sapply(MedGen_idNames$syn, strsplit, split = "")))
 
@@ -109,8 +110,8 @@ MedGen_idNames <- MedGen_idNames[!is.na(MedGen_idNames$syn),]
 ## Remove duplicated (keep canonical)
 dim(MedGen_idNames)
 dim(unique(MedGen_idNames))
-MedGen_idNames <- MedGen_idNames[order(MedGen_idNames$canonical,decreasing = T),]
-MedGen_idNames <- unique(MedGen_idNames)
+# MedGen_idNames <- MedGen_idNames[order(MedGen_idNames$canonical,decreasing = T),]
+# MedGen_idNames <- unique(MedGen_idNames)
 dim(MedGen_idNames)
 
 ## all idNames in entryId
@@ -120,11 +121,11 @@ MedGen_idNames <- MedGen_idNames[which(MedGen_idNames$id %in% MedGen_dis$X.CUI),
 ## Remove empty names, ifany
 nc <- nchar(MedGen_idNames$syn)
 head(table(nc))
-MedGen_idNames[which(nc < 3),]
+MedGen_idNames[which(nc < 4),]
 ## Remove names of 0 or 1 character long
 MedGen_idNames[which(nc == 0),]
 MedGen_idNames[which(nc == 1),]
-MedGen_idNames <- MedGen_idNames[-which(nc == 1),]
+# MedGen_idNames <- MedGen_idNames[-which(nc == 1),]
 
 ## entryId
 MedGen_entryId <- unique(data.frame(DB = c(MedGen_crossId$DB1,MedGen_idNames$DB),
@@ -135,9 +136,7 @@ MedGen_def <- read.table(file.path(sdir,"MGDEF.RFF"), sep = "|", header = TRUE, 
 MedGen_entryId$def <- MedGen_def$DEF[match(MedGen_entryId$id, MedGen_def$X.CUI)]
 ## Check characters for \t, \n, \r and put to ASCII
 MedGen_entryId$def <- iconv(x = MedGen_entryId$def,to="ASCII//TRANSLIT")
-table(unlist(sapply(MedGen_entryId$def, strsplit, split = "")))
 MedGen_entryId$def <- gsub(paste("\n","\t","\r", sep = "|")," ",MedGen_entryId$def)
-table(unlist(sapply(MedGen_entryId$def, strsplit, split = "")))
 MedGen_entryId$def <- gsub("\"","'",MedGen_entryId$def)
 MedGen_entryId$def <- gsub("\\\\","",MedGen_entryId$def)
 table(unlist(sapply(MedGen_entryId$def, strsplit, split = "")))
@@ -182,8 +181,14 @@ for(f in toSave){
     file=file.path(ddir, paste(f, ".txt", sep="")),
     sep="\t",
     row.names=FALSE, col.names=TRUE,
-    quote=FALSE
+    quote=TRUE,
+    qmethod = "double"
   )
 }
+writeLastUpdate()
 message(Sys.time())
 message("... Done\n")
+
+##############################################################
+## Check model
+source("../../00-Utils/autoCheckModel.R")
