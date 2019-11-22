@@ -1,17 +1,20 @@
 rm(list = ls())
 gc()
 
-setwd("~/Shared/Data-Science/Data-Source-Model-Repository/MedGen/scripts/")
+# setwd("~/Shared/Data-Science/Data-Source-Model-Repository/MedGen/scripts/")
 
+library(here)
 library(XML)
 library(parallel)
 library(here)
-source("../../00-Utils/writeLastUpdate.R")
-
+source(here("..", "00-Utils/writeLastUpdate.R"))
+library(dplyr)
+library(tidyr)
+library(tibble)
 ##
 mc.cores <- 55
-sdir <- file.path("../sources")
-ddir <- file.path("../data")
+sdir <- "~/Shared/Data-Science/Data-Source-Model-Repository/MedGen/sources"
+ddir <- here("data")
 
 ###############################################################################@
 ## Source information ----
@@ -31,9 +34,9 @@ MedGen_sourceFiles <- sfi[which(sfi$inUse), c("url", "current")]
 ## decompress gz
 for(f in sfi$file){
   gzf <- file.path(sdir,f)
-  system(paste0("gzip -d ", gzf))
+  system(paste0("gzip -df ", gzf))
   # system(paste0("rm ",file.path(sdir,gsub(".gz","",f))))
-  }
+}
 
 ###########################
 ## Basic information
@@ -41,15 +44,20 @@ for(f in sfi$file){
 ## crossId
 MedGen_conso <- read.table(file.path(sdir,"MGCONSO.RFF"), sep = "|", header = TRUE, comment.char = "", quote = "", 
                       fill = TRUE, colClasses = c("character"))
+table(MedGen_conso$SAB)
 MedGen_conso$SAB[MedGen_conso$SAB == "MSH"] <- "MeSH"
 MedGen_conso$SAB[MedGen_conso$SAB == "NCI"] <- "NCIt"
 MedGen_conso$SAB[MedGen_conso$SAB == "SNOMEDCT_US"] <- "SNOMEDCT"
 MedGen_conso$SAB[MedGen_conso$SAB == "ORDO"] <- "ORPHA"
+MedGen_conso$SAB[MedGen_conso$SAB == "HPO"] <- "HP"
+MedGen_conso <- MedGen_conso[!MedGen_conso$SAB == "",]
+table(MedGen_conso$SAB)
+##
 MedGen_conso$DB <- "UMLS"
 MedGen_conso$SDUI <- gsub(".*:","",MedGen_conso$SDUI)
 MedGen_conso$SDUI <- gsub(".*_","",MedGen_conso$SDUI)
 MedGen_conso$id <- ifelse(MedGen_conso$SAB %in% c("NCIt","SNOMEDCT"),MedGen_conso$SCUI,MedGen_conso$SDUI)
-MedGen_conso <- MedGen_conso[-which(MedGen_conso$SAB == ""),]
+MedGen_conso$canonical <- TRUE
 
 MedGen_crossId <- unique(MedGen_conso[,c("DB","X.CUI","SAB","id")])
 names(MedGen_crossId) <- c("DB1","id1","DB2","id2")
@@ -87,16 +95,30 @@ dim(MedGen_crossId)
 
 ## idNames
 MedGen_idNames <- read.table(file.path(sdir,"NAMES.RGG"), sep = "|", header = TRUE, comment.char = "", quote = "", 
-                             fill = TRUE, colClasses = c("character"))
-MedGen_idNames$DB <- "MedGen"
-MedGen_idNames <- MedGen_idNames[,c("DB","X.CUI","name")]
-names(MedGen_idNames) <- c("DB","id","syn")
+                             fill = TRUE, colClasses = c("character")) %>%
+  mutate(DB = "UMLS",
+         canonical = FALSE) %>%
+  select(DB, 
+         id = X.CUI, 
+         syn = name, 
+         canonical)
+# MedGen_idNames$DB <- "UMLS"
+# MedGen_idNames <- MedGen_idNames[,c("DB","X.CUI","name")]
+# MedGen_idNames$canonical <- FALSE
+##
+MedGen_idNames <- bind_rows(MedGen_idNames,
+                            MedGen_conso %>%
+                              select(DB, 
+                                     id  = X.CUI, 
+                                     syn = STR, 
+                                     canonical)) %>%
+  distinct()
+dim(MedGen_idNames)
 ## * Finding non-numeric ID 
 id <-  (MedGen_idNames$id)
 numidsuf <- as.numeric(sub("^[^[:digit:]]*", "", id))
 MedGen_idNames[which(is.na(numidsuf)),]
 MedGen_idNames <- MedGen_idNames[-which(is.na(numidsuf)),] 
-MedGen_idNames$canonical <- ifelse(MedGen_idNames$syn %in% MedGen_conso$STR,TRUE, FALSE)
 
 ## Check characters for \t, \n, \r and put to ASCII
 MedGen_idNames$syn <- iconv(x = MedGen_idNames$syn,to="ASCII//TRANSLIT")
@@ -139,6 +161,7 @@ MedGen_entryId$def <- iconv(x = MedGen_entryId$def,to="ASCII//TRANSLIT")
 MedGen_entryId$def <- gsub(paste("\n","\t","\r", sep = "|")," ",MedGen_entryId$def)
 MedGen_entryId$def <- gsub("\"","'",MedGen_entryId$def)
 MedGen_entryId$def <- gsub("\\\\","",MedGen_entryId$def)
+MedGen_entryId$level <- NA
 table(unlist(sapply(MedGen_entryId$def, strsplit, split = "")))
 
 ## check NA
@@ -158,6 +181,18 @@ MedGen_entryId[which(nc < 3),]
 MedGen_entryId[which(nc == 0),]
 MedGen_entryId[which(nc == 1),]
 MedGen_entryId$def[which(nc < 3)] <- NA
+
+## If definition is NA, label is used (canonical)
+tmp <- MedGen_idNames %>% filter(canonical)
+MedGen_entryId <- MedGen_entryId %>% 
+  mutate(def = case_when(is.na(def) ~ tmp$syn[match(id,tmp$id)],
+                         TRUE ~ def))
+
+## Not all ids have a canonical label, use the non-canonical one
+tmp <- MedGen_idNames %>% filter(id %in% MedGen_entryId[is.na(MedGen_entryId$def),"id"])
+MedGen_entryId <- MedGen_entryId %>% 
+  mutate(def = case_when(is.na(def) ~ tmp$syn[match(id,tmp$id)],
+                         TRUE ~ def))
 
 rm(MedGen_conso, MedGen_def, MedGen_dis)
 
@@ -191,4 +226,4 @@ message("... Done\n")
 
 ##############################################################
 ## Check model
-source("../../00-Utils/autoCheckModel.R")
+# source("../00-Utils/autoCheckModel.R")

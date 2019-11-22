@@ -14,10 +14,6 @@ urls <- unlist(lapply(
       return(toRet)
    }
 ))
-# urls["mondo.owl"] <- sprintf(
-#    urls["mondo.owl"],
-#    format(Sys.Date(), "%Y-%m")
-# )
 srcDir <- "../sources"
 
 downloadSourceFiles(urls, srcDir)
