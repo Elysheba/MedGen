@@ -1,0 +1,421 @@
+{
+  "MedGen_entryId": {
+    "tableName": ["MedGen_entryId"],
+    "fields": [
+      {
+        "name": "DB",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "Name of the ontology database"
+      },
+      {
+        "name": "id",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "Disease ontology identifier"
+      },
+      {
+        "name": "def",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": ""
+      },
+      {
+        "name": "level",
+        "type": "integer",
+        "nullable": true,
+        "unique": false,
+        "comment": ""
+      }
+    ],
+    "primaryKey": ["DB", "id"],
+    "indexes": [
+      {
+        "fields": ["DB", "id"],
+        "unique": [true]
+      }
+    ],
+    "display": {
+      "x": [-73],
+      "y": [-86],
+      "color": ["NA"],
+      "comment": ["MedGen identifiers, definition and level information"]
+    },
+    "foreignKeys": []
+  },
+  "MedGen_crossId": {
+    "tableName": ["MedGen_crossId"],
+    "fields": [
+      {
+        "name": "DB1",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "Name of the database of \"id1\""
+      },
+      {
+        "name": "id1",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "Disease ontology identifier from MedGen"
+      },
+      {
+        "name": "DB2",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "Name of the database of 'id2' "
+      },
+      {
+        "name": "id2",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "Crossreference disease ontology identifier in MedGen"
+      }
+    ],
+    "primaryKey": [],
+    "foreignKeys": [
+      {
+        "refTable": ["MedGen_entryId"],
+        "key": [
+          {
+            "from": "DB1",
+            "to": "DB"
+          },
+          {
+            "from": "id1",
+            "to": "id"
+          }
+        ],
+        "cardinality": [0, -1, 1, 1]
+      }
+    ],
+    "indexes": [
+      {
+        "fields": ["DB1", "id1"],
+        "unique": [false]
+      }
+    ],
+    "display": {
+      "x": [84],
+      "y": [-180],
+      "color": ["NA"],
+      "comment": ["Cross-reference table"]
+    }
+  },
+  "MedGen_idNames": {
+    "tableName": ["MedGen_idNames"],
+    "fields": [
+      {
+        "name": "DB",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "Name original database/ontology"
+      },
+      {
+        "name": "id",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "Disease ontology identifier from MedGen"
+      },
+      {
+        "name": "syn",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "Name or label to to describe the disease identifier"
+      },
+      {
+        "name": "canonical",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "TRUE/FALSE if the \"name\" was used as the label for this disease in MedGen"
+      }
+    ],
+    "primaryKey": [],
+    "foreignKeys": [
+      {
+        "refTable": ["MedGen_entryId"],
+        "key": [
+          {
+            "from": "DB",
+            "to": "DB"
+          },
+          {
+            "from": "id",
+            "to": "id"
+          }
+        ],
+        "cardinality": [0, -1, 1, 1]
+      }
+    ],
+    "indexes": [
+      {
+        "fields": ["DB", "id"],
+        "unique": [false]
+      }
+    ],
+    "display": {
+      "x": [-180],
+      "y": [61],
+      "color": ["NA"],
+      "comment": ["Synonym and label information"]
+    }
+  },
+  "MedGen_sourceFiles": {
+    "tableName": ["MedGen_sourceFiles"],
+    "fields": [
+      {
+        "name": "url",
+        "type": "character",
+        "nullable": false,
+        "unique": true,
+        "comment": "URL location of the source files"
+      },
+      {
+        "name": "current",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "Date of the current version of the source files"
+      },
+      {
+        "name": "file",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "file name"
+      }
+    ],
+    "primaryKey": [],
+    "indexes": [
+      {
+        "fields": ["url"],
+        "unique": [true]
+      }
+    ],
+    "display": {
+      "x": [180],
+      "y": [180],
+      "color": ["NA"],
+      "comment": ["Source files"]
+    },
+    "foreignKeys": []
+  },
+  "MedGen_HPO": {
+    "tableName": ["MedGen_HPO"],
+    "fields": [
+      {
+        "name": "id",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "MedGen identifier"
+      },
+      {
+        "name": "hp",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "HPO identifier"
+      },
+      {
+        "name": "DB",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "MedGen database"
+      }
+    ],
+    "foreignKeys": [
+      {
+        "refTable": ["MedGen_entryId"],
+        "key": [
+          {
+            "from": "DB",
+            "to": "DB"
+          },
+          {
+            "from": "id",
+            "to": "id"
+          }
+        ],
+        "cardinality": [0, -1, 0, 1]
+      }
+    ],
+    "indexes": {},
+    "display": {
+      "x": [89],
+      "y": [40],
+      "color": ["NA"],
+      "comment": ["MedGen to phenotype"]
+    },
+    "primaryKey": []
+  },
+  "MedGen_OMIM_entryId": {
+    "tableName": ["MedGen_OMIM_entryId"],
+    "fields": [
+      {
+        "name": "DB",
+        "type": "character",
+        "nullable": false,
+        "unique": true,
+        "comment": "Database"
+      },
+      {
+        "name": "id",
+        "type": "character",
+        "nullable": false,
+        "unique": true,
+        "comment": "OMIM identifiers"
+      },
+      {
+        "name": "def",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "definition"
+      },
+      {
+        "name": "level",
+        "type": "integer",
+        "nullable": true,
+        "unique": false,
+        "comment": "Level in hierarchy"
+      }
+    ],
+    "indexes": [
+      {
+        "fields": ["DB", "id"],
+        "unique": [true]
+      },
+      {
+        "fields": ["DB"],
+        "unique": [true]
+      }
+    ],
+    "display": {
+      "x": [247],
+      "y": [-85],
+      "color": ["NA"],
+      "comment": ["OMIM identifiers listed in the MedGen database"]
+    },
+    "primaryKey": ["DB", "id"],
+    "foreignKeys": []
+  },
+  "MedGen_OMIM_HPO": {
+    "tableName": ["MedGen_OMIM_HPO"],
+    "fields": [
+      {
+        "name": "DB",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "Database"
+      },
+      {
+        "name": "id",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "OMIM identifier"
+      },
+      {
+        "name": "hp",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "Phenotype identifier"
+      }
+    ],
+    "foreignKeys": [
+      {
+        "refTable": ["MedGen_OMIM_entryId"],
+        "key": [
+          {
+            "from": "DB",
+            "to": "DB"
+          },
+          {
+            "from": "id",
+            "to": "id"
+          }
+        ],
+        "cardinality": [0, -1, 0, 1]
+      }
+    ],
+    "indexes": {},
+    "display": {
+      "x": [296],
+      "y": [48],
+      "color": ["NA"],
+      "comment": ["OMIM to HPO relations provided by MedGen resource"]
+    },
+    "primaryKey": []
+  },
+  "MedGen_OMIM_idNames": {
+    "tableName": ["MedGen_OMIM_idNames"],
+    "fields": [
+      {
+        "name": "DB",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "DB field"
+      },
+      {
+        "name": "id",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "Disease identifier"
+      },
+      {
+        "name": "syn",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "Synonym/label info"
+      },
+      {
+        "name": "canonical",
+        "type": "logical",
+        "nullable": false,
+        "unique": false,
+        "comment": "Canonical label or not"
+      }
+    ],
+    "foreignKeys": [
+      {
+        "refTable": ["MedGen_OMIM_entryId"],
+        "key": [
+          {
+            "from": "DB",
+            "to": "DB"
+          },
+          {
+            "from": "id",
+            "to": "id"
+          }
+        ],
+        "cardinality": [0, -1, 1, 1]
+      }
+    ],
+    "indexes": {},
+    "display": {
+      "x": [493],
+      "y": [-128],
+      "color": ["NA"],
+      "comment": ["Synonym and label information"]
+    },
+    "primaryKey": []
+  }
+}

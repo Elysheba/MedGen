@@ -11,10 +11,18 @@ source(here("..", "00-Utils/writeLastUpdate.R"))
 library(dplyr)
 library(tidyr)
 library(tibble)
+library(ReDaMoR)
 ##
 mc.cores <- 55
 sdir <- "~/Shared/Data-Science/Data-Source-Model-Repository/MedGen/sources"
 ddir <- here("data")
+
+###############################################################################@
+## Data model ----
+###############################################################################@
+load(here("model", "MedGen.rda"))
+# dm <- model_relational_data()
+save(dm, file = here("model", "MedGen.rda"))
 
 ###############################################################################@
 ## Source information ----
@@ -26,14 +34,15 @@ sfi <- read.table(
    header=T,
    stringsAsFactors=FALSE
 )
-MedGen_sourceFiles <- sfi[which(sfi$inUse), c("url", "current")]
+MedGen_sourceFiles <- sfi[which(sfi$inUse), c("file", "url", "current")]
 
 ###############################################################################@
 ## Data from medgen ----
 ###############################################################################@
 ## decompress gz
-for(f in sfi$file){
+for(f in MedGen_sourceFiles$file){
   gzf <- file.path(sdir,f)
+  print(gzf)
   system(paste0("gzip -df ", gzf))
   # system(paste0("rm ",file.path(sdir,gsub(".gz","",f))))
 }
@@ -57,7 +66,7 @@ MedGen_conso$DB <- "UMLS"
 MedGen_conso$SDUI <- gsub(".*:","",MedGen_conso$SDUI)
 MedGen_conso$SDUI <- gsub(".*_","",MedGen_conso$SDUI)
 MedGen_conso$id <- ifelse(MedGen_conso$SAB %in% c("NCIt","SNOMEDCT"),MedGen_conso$SCUI,MedGen_conso$SDUI)
-MedGen_conso$canonical <- TRUE
+MedGen_conso$canonical <- FALSE
 
 MedGen_crossId <- unique(MedGen_conso[,c("DB","X.CUI","SAB","id")])
 names(MedGen_crossId) <- c("DB1","id1","DB2","id2")
@@ -97,7 +106,7 @@ dim(MedGen_crossId)
 MedGen_idNames <- read.table(file.path(sdir,"NAMES.RGG"), sep = "|", header = TRUE, comment.char = "", quote = "", 
                              fill = TRUE, colClasses = c("character")) %>%
   mutate(DB = "UMLS",
-         canonical = FALSE) %>%
+         canonical = TRUE) %>%
   select(DB, 
          id = X.CUI, 
          syn = name, 
@@ -118,7 +127,7 @@ dim(MedGen_idNames)
 id <-  (MedGen_idNames$id)
 numidsuf <- as.numeric(sub("^[^[:digit:]]*", "", id))
 MedGen_idNames[which(is.na(numidsuf)),]
-MedGen_idNames <- MedGen_idNames[-which(is.na(numidsuf)),] 
+# MedGen_idNames <- MedGen_idNames[-which(is.na(numidsuf)),] 
 
 ## Check characters for \t, \n, \r and put to ASCII
 MedGen_idNames$syn <- iconv(x = MedGen_idNames$syn,to="ASCII//TRANSLIT")
@@ -196,6 +205,48 @@ MedGen_entryId <- MedGen_entryId %>%
 
 rm(MedGen_conso, MedGen_def, MedGen_dis)
 
+## 
+MedGen_HPO <- read.table(file.path(sdir,"MedGen_HPO_Mapping.txt"), sep = "|", header = TRUE, comment.char = "", quote = "", 
+                         fill = TRUE, colClasses = c("character")) %>%
+  filter(X.CUI %in% MedGen_entryId$id) %>%
+  select(id = X.CUI,
+         hp = SDUI) %>%
+  mutate(DB = "MedGen", 
+         hp = gsub(".*:", "", hp))
+table(MedGen_HPO$id %in% MedGen_entryId$id)
+
+head(MedGen_HPO)
+
+MedGen_OMIM_HPO <- read.table(file.path(sdir,"MedGen_HPO_OMIM_Mapping.txt"), sep = "|", header = TRUE, comment.char = "", quote = "", 
+                         fill = TRUE, colClasses = c("character")) 
+MedGen_OMIM_entryId <- MedGen_OMIM_HPO %>%
+  mutate(DB = "OMIM",
+         level = NA) %>%
+  select(DB,
+         id = MIM_number,
+         def = OMIM_name,
+         level) %>%
+  distinct()
+MedGen_OMIM_entryId$def <- iconv(x = MedGen_OMIM_entryId$def,to="ASCII//TRANSLIT")
+MedGen_OMIM_entryId$def <- gsub(paste("\n","\t","\r", sep = "|")," ",MedGen_OMIM_entryId$def)
+MedGen_OMIM_entryId$def <- gsub("\"","'",MedGen_OMIM_entryId$def)
+# table(unlist(sapply(MedGen_OMIM_entryId$def, strsplit, split = "")))
+
+MedGen_OMIM_idNames <- MedGen_OMIM_entryId %>%
+  select(DB, 
+         id, 
+         syn = def) %>%
+  mutate(canonical = TRUE)
+MedGen_OMIM_HPO <- MedGen_OMIM_HPO %>%
+  mutate(DB = "OMIM", 
+         phenoDB = "HP") %>%
+  select(DB, 
+         id = MIM_number,
+         hp = HPO_ID)
+head(MedGen_OMIM_HPO)
+
+table(MedGen_OMIM_HPO$id %in% MedGen_OMIM_entryId$id)
+
 
 ###############################################################################@
 ## Writing tables ----
@@ -220,7 +271,6 @@ for(f in toSave){
     qmethod = "double"
   )
 }
-writeLastUpdate()
 message(Sys.time())
 message("... Done\n")
 

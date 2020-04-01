@@ -44,6 +44,22 @@
 				"value": 0,
 				"units": "1/day"
 			}
+		},
+			        {
+			"name":"MedGen_HPO_Mapping.txt.gz",
+		        "URL template":"ftp://ftp.ncbi.nlm.nih.gov/pub/medgen/MedGen_HPO_Mapping.txt.gz",
+			"remote update frequency": {
+				"value": 0,
+				"units": "1/day"
+			}
+		},
+			        {
+			"name":"MedGen_HPO_OMIM_Mapping.txt.gz",
+		        "URL template":"ftp://ftp.ncbi.nlm.nih.gov/pub/medgen/MedGen_HPO_OMIM_Mapping.txt.gz",
+			"remote update frequency": {
+				"value": 0,
+				"units": "1/day"
+			}
 		}
 	]
 }
