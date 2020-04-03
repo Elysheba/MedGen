@@ -267,14 +267,14 @@
         "name": "DB",
         "type": "character",
         "nullable": false,
-        "unique": true,
+        "unique": false,
         "comment": "Database"
       },
       {
         "name": "id",
         "type": "character",
         "nullable": false,
-        "unique": true,
+        "unique": false,
         "comment": "OMIM identifiers"
       },
       {
@@ -295,10 +295,6 @@
     "indexes": [
       {
         "fields": ["DB", "id"],
-        "unique": [true]
-      },
-      {
-        "fields": ["DB"],
         "unique": [true]
       }
     ],

@@ -4,6 +4,7 @@
 	"description": "Organizes information related to human medical genetics, such as attributes of conditions with a genetic contribution.",
 	"reference URL": "https://www.ncbi.nlm.nih.gov/medgen/",
 	"version": "0.2",
+	"maintainer":"Liesbeth François <liesbeth.francois@ucb.com>",
 	"source files": [
 		{
 			"name":"MGCONSO.RFF.gz",
