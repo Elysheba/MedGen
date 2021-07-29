@@ -413,5 +413,54 @@
       "comment": ["Synonym and label information"]
     },
     "primaryKey": []
+  },
+  "MedGen_type": {
+    "tableName": ["MedGen_type"],
+    "fields": [
+      {
+        "name": "db",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "name ontology"
+      },
+      {
+        "name": "id",
+        "type": "character",
+        "nullable": false,
+        "unique": true,
+        "comment": "MedGen identifier"
+      },
+      {
+        "name": "type",
+        "type": "character",
+        "nullable": false,
+        "unique": false,
+        "comment": "Semantic type - STY"
+      }
+    ],
+    "foreignKeys": [
+      {
+        "refTable": ["MedGen_entryId"],
+        "key": [
+          {
+            "from": "db",
+            "to": "DB"
+          },
+          {
+            "from": "id",
+            "to": "id"
+          }
+        ],
+        "cardinality": [0, -1, 0, 1]
+      }
+    ],
+    "indexes": {},
+    "display": {
+      "x": [-123],
+      "y": [-242],
+      "color": ["NA"],
+      "comment": ["Description of the semantic type of MedGen identifiers"]
+    }
   }
 }

@@ -1,14 +1,14 @@
 {
 	"name": "MedGen",
 	"title": "Data extracted from the MedGen database",
-	"description": "Organizes information related to human medical genetics, such as attributes of conditions with a genetic contribution.",
+	"description": "Organizes information related to human medical genetics, such as attributes of conditions with a genetic contribution. Includes all semantic types available in MedGen.",
 	"reference URL": "https://www.ncbi.nlm.nih.gov/medgen/",
 	"version": "0.2",
 	"maintainer":"Liesbeth François <liesbeth.francois@ucb.com>",
 	"source files": [
 		{
 			"name":"MGCONSO.RFF.gz",
-			"URL template":"ftp://ftp.ncbi.nlm.nih.gov/pub/medgen/MGCONSO.RRF.gz",
+			"URL template":"https://ftp.ncbi.nlm.nih.gov/pub/medgen/MGCONSO.RRF.gz",
 			"remote update frequency": {
 				"value": 0,
 				"units": "1/day"
@@ -16,7 +16,7 @@
 		},
 	    	{
 			"name":"NAMES.RGG.gz",
-			"URL template":"ftp://ftp.ncbi.nlm.nih.gov/pub/medgen/NAMES.RRF.gz",
+			"URL template":"https://ftp.ncbi.nlm.nih.gov/pub/medgen/NAMES.RRF.gz",
 			"remote update frequency": {
 				"value": 0,
 				"units": "1/day"
@@ -24,7 +24,7 @@
 		},
 	    	{
 			"name":"MGDEF.RFF.gz",
-			"URL template":"ftp://ftp.ncbi.nlm.nih.gov/pub/medgen/MGDEF.RRF.gz",
+			"URL template":"https://ftp.ncbi.nlm.nih.gov/pub/medgen/MGDEF.RRF.gz",
 			"remote update frequency": {
 				"value": 0,
 				"units": "1/day"
@@ -32,7 +32,7 @@
 		},
 	    	{
 			"name":"MGREL.RFF.gz",
-			"URL template":"ftp://ftp.ncbi.nlm.nih.gov/pub/medgen/MGREL.RRF.gz",
+			"URL template":"https://ftp.ncbi.nlm.nih.gov/pub/medgen/MGREL.RRF.gz",
 			"remote update frequency": {
 				"value": 0,
 				"units": "1/day"
@@ -40,7 +40,7 @@
 		},
 	        {
 			"name":"MGSTY.RFF.gz",
-		        "URL template":"ftp://ftp.ncbi.nlm.nih.gov/pub/medgen/MGSTY.RRF.gz",
+		        "URL template":"https://ftp.ncbi.nlm.nih.gov/pub/medgen/MGSTY.RRF.gz",
 			"remote update frequency": {
 				"value": 0,
 				"units": "1/day"
@@ -48,7 +48,7 @@
 		},
 			        {
 			"name":"MedGen_HPO_Mapping.txt.gz",
-		        "URL template":"ftp://ftp.ncbi.nlm.nih.gov/pub/medgen/MedGen_HPO_Mapping.txt.gz",
+		        "URL template":"https://ftp.ncbi.nlm.nih.gov/pub/medgen/MedGen_HPO_Mapping.txt.gz",
 			"remote update frequency": {
 				"value": 0,
 				"units": "1/day"
@@ -56,7 +56,7 @@
 		},
 			        {
 			"name":"MedGen_HPO_OMIM_Mapping.txt.gz",
-		        "URL template":"ftp://ftp.ncbi.nlm.nih.gov/pub/medgen/MedGen_HPO_OMIM_Mapping.txt.gz",
+		        "URL template":"https://ftp.ncbi.nlm.nih.gov/pub/medgen/MedGen_HPO_OMIM_Mapping.txt.gz",
 			"remote update frequency": {
 				"value": 0,
 				"units": "1/day"

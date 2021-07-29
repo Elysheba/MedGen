@@ -62,7 +62,7 @@ MedGen_conso$SAB[MedGen_conso$SAB == "HPO"] <- "HP"
 MedGen_conso <- MedGen_conso[!MedGen_conso$SAB == "",]
 table(MedGen_conso$SAB)
 ##
-MedGen_conso$DB <- "UMLS"
+MedGen_conso$DB <- "MedGen"
 MedGen_conso$SDUI <- gsub(".*:","",MedGen_conso$SDUI)
 MedGen_conso$SDUI <- gsub(".*_","",MedGen_conso$SDUI)
 MedGen_conso$id <- ifelse(MedGen_conso$SAB %in% c("NCIt","SNOMEDCT"),MedGen_conso$SCUI,MedGen_conso$SDUI)
@@ -96,16 +96,22 @@ MedGen_crossId[which(MedGen_crossId$id1 == MedGen_crossId$id2),]
 ## Keep only disease
 MedGen_dis <- read.table(file.path(sdir,"MGSTY.RFF"), sep = "|", header = TRUE, comment.char = "", quote = "", 
                          fill = TRUE, colClasses = c("character"))
-MedGen_dis <- MedGen_dis[grep(paste("Disease or Syndrome","Acquired Abnormality",
-                                    "Anatomical Abnormality","Congenital Abnormality",sep = "|"),
-                              MedGen_dis$STY),]
+MedGen_type <- MedGen_dis %>% 
+  mutate(db = "MedGen") %>% 
+  select(db, 
+         id = X.CUI,
+         type = STY)
+# MedGen_dis <- MedGen_dis[grep(paste("Disease or Syndrome","Acquired Abnormality",
+#                                     "Anatomical Abnormality","Congenital Abnormality",sep = "|"),
+#                               MedGen_dis$STY),]
 MedGen_crossId <- MedGen_crossId[which(MedGen_crossId$id1 %in% MedGen_dis$X.CUI),]
 dim(MedGen_crossId)
 
 ## idNames
-MedGen_idNames <- read.table(file.path(sdir,"NAMES.RGG"), sep = "|", header = TRUE, comment.char = "", quote = "", 
+MedGen_idNames <- read.table(file.path(sdir,"NAMES.RGG"), sep = "|", header = TRUE, 
+                             comment.char = "", quote = "", 
                              fill = TRUE, colClasses = c("character")) %>%
-  mutate(DB = "UMLS",
+  mutate(DB = "MedGen",
          canonical = TRUE) %>%
   select(DB, 
          id = X.CUI, 
@@ -202,6 +208,7 @@ tmp <- MedGen_idNames %>% filter(id %in% MedGen_entryId[is.na(MedGen_entryId$def
 MedGen_entryId <- MedGen_entryId %>% 
   mutate(def = case_when(is.na(def) ~ tmp$syn[match(id,tmp$id)],
                          TRUE ~ def))
+table(MedGen_type$id %in% MedGen_entryId$id)
 
 rm(MedGen_conso, MedGen_def, MedGen_dis)
 
