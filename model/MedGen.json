@@ -428,7 +428,7 @@
         "name": "id",
         "type": "character",
         "nullable": false,
-        "unique": true,
+        "unique": false,
         "comment": "MedGen identifier"
       },
       {
