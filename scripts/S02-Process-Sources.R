@@ -14,15 +14,16 @@ library(tibble)
 library(ReDaMoR)
 ##
 mc.cores <- 55
-sdir <- "~/Shared/Data-Science/Data-Source-Model-Repository/MedGen/sources"
+# sdir <- "~/Shared/Data-Science/Data-Source-Model-Repository/MedGen/sources"
+sdir <- here("sources")
 ddir <- here("data")
 
 ###############################################################################@
 ## Data model ----
 ###############################################################################@
-load(here("model", "MedGen.rda"))
+# load(here("model", "MedGen.rda"))
 # dm <- model_relational_data()
-save(dm, file = here("model", "MedGen.rda"))
+# save(dm, file = here("model", "MedGen.rda"))
 
 ###############################################################################@
 ## Source information ----
